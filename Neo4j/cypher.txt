@@ -1,0 +1,24 @@
+#command for importing csv
+/Users/bodomting119/Downloads/neo4j-community-4.4.10/bin/neo4j-admin import --skip-duplicate-nodes --skip-bad-relationships \
+--nodes=Sequence=/Users/bodomting119/Desktop/pepe/1/Sequence_header.csv,/Users/bodomting119/Desktop/pepe/1/Sequence.csv \
+--relationships=SEQUENCE_OF_A=/Users/bodomting119/Desktop/pepe/1/S_P_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/S_P_relation.csv \
+--nodes=Parasite=/Users/bodomting119/Desktop/pepe/1/Parasite_header.csv,/Users/bodomting119/Desktop/pepe/1/Parasite.csv \
+--relationships=PARASITE_OF=/Users/bodomting119/Desktop/pepe/1/P_H_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/P_H_relation.csv \
+--nodes=Host=/Users/bodomting119/Desktop/pepe/1/Host_header.csv,/Users/bodomting119/Desktop/pepe/1/Host.csv \
+--relationships=CHILD_OF_D=/Users/bodomting119/Desktop/pepe/1/H_HP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/H_HP_relation.csv \
+--nodes=Hostparent=/Users/bodomting119/Desktop/pepe/1/Hostparent_header.csv,/Users/bodomting119/Desktop/pepe/1/Hostparent.csv \
+--relationships=CHILD_OF_A=/Users/bodomting119/Desktop/pepe/1/HP_HP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/HP_HP_relation.csv \
+--nodes=Parasiteparent=/Users/bodomting119/Desktop/pepe/1/Parasiteparent_header.csv,/Users/bodomting119/Desktop/pepe/1/Parasiteparent.csv \
+--relationships=CHILD_OF_C=/Users/bodomting119/Desktop/pepe/1/P_PP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/P_PP_relation.csv \
+--relationships=CHILD_OF_B=/Users/bodomting119/Desktop/pepe/1/PP_PP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/PP_PP_relation.csv \
+--relationships=SEQUENCE_OF_B=/Users/bodomting119/Desktop/pepe/1/S_H_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/S_H_relation.csv
+
+
+
+#query for index and CONSTRAINT
+CREATE INDEX product_name FOR (p:Product) ON (p.productName);
+CREATE INDEX supplier_id FOR (s:Supplier) ON (s.supplierID);
+CREATE INDEX employee_id FOR (e:Employee) ON (e.employeeID);
+CREATE INDEX category_id FOR (c:Category) ON (c.categoryID);
+CREATE CONSTRAINT order_id ON (o:Order) ASSERT o.orderID IS UNIQUE;
+CALL db.awaitIndexes();
