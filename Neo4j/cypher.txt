@@ -16,9 +16,9 @@
 
 
 #query for index and CONSTRAINT
-CREATE INDEX product_name FOR (p:Product) ON (p.productName);
-CREATE INDEX supplier_id FOR (s:Supplier) ON (s.supplierID);
-CREATE INDEX employee_id FOR (e:Employee) ON (e.employeeID);
-CREATE INDEX category_id FOR (c:Category) ON (c.categoryID);
-CREATE CONSTRAINT order_id ON (o:Order) ASSERT o.orderID IS UNIQUE;
+CREATE INDEX sequence_id FOR (s:Sequence) ON (s.accId);
+CREATE INDEX host_id FOR (h:Host) ON (h.hostId);
+CREATE INDEX hostparent_id FOR (h:Hostparent) ON (h.hpId);
+CREATE INDEX parasite_id FOR (p:Parasite) ON (p.parasiteId);
+CREATE CONSTRAINT parasiteparent_id ON (p:Parasiteparent) ASSERT p.ppId IS UNIQUE;
 CALL db.awaitIndexes();
