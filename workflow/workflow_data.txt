@@ -1,0 +1,23 @@
+python_home=/home/yi_adm/zackscode/python_scripts
+#download tax dump file
+wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+#make dir and extract
+mkdir taxdump_files
+tar -zxvf taxdump.tar.gz -C taxdump_files/
+rm -rf taxdump.tar.gz
+#download relevant files
+wget ftp://ftp.ncbi.nih.gov/genbank/daily-nc/nc*.flat.gz -P nc_sequences/
+# Download viral and phage sequence
+wget ftp://ftp.ncbi.nih.gov/genbank/gbvrl*.seq.gz -P viral_sequences
+wget ftp://ftp.ncbi.nih.gov/genbank/gbphg*.seq.gz -P phage_sequences
+
+# unzip and convert the files and cat the contents to corresponding files. 
+for i  in $(ls | grep _sequences); do 
+	# For each file in the directory: $j in $i 
+	for j in $(ls $i); do
+		gunzip $i"/"$j
+		$python_home"/file_parser.py" $i"/"${j%.gz}
+		cat $i"/"${j%.gz}"_acc_table.txt" >> Sequences.txt
+		cat $i"/"${j%.gz}"_unmatched.txt" >> Unmatched.txt
+	done
+done

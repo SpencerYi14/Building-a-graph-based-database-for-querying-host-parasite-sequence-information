@@ -1,0 +1,14 @@
+$python_home"/create_db.py"
+# Create files for lineages of cellular and virus
+$python_home"/determine_lineage_host.py" virus
+$python_home"/determine_lineage_host.py" not_virus
+
+# Upload these files to the DB
+mkdir DB_Uploads
+mv viral_lineage.txt DB_Uploads
+mv cellular_lineage.txt DB_Uploads
+$python_home"/create_db_2.py"
+
+# Split the Sequence file into all parents for each node. 
+$python_home"/upload_parasite_host.py"
+$python_home"/upload_parasite_virus.py"

@@ -1,0 +1,132 @@
+#####prepare csv file for import
+#load Sequence.txt as table seqence into MariaDB
+
+CREATE TABLE `parasite_lineage` (
+`accession_number` VARCHAR(255) NOT NULL,
+`host` VARCHAR(255) NOT NULL,
+`organism` VARCHAR(255) NOT NULL,
+`county` VARCHAR(255) NOT NULL,
+`colle_date` VARCHAR(255) NOT NULL,
+`sub_date` VARCHAR(255) NOT NULL,
+`taxonomy_id` VARCHAR(255) NOT NULL,
+`host_converted` VARCHAR(255) NOT NULL,
+`host_taxid` mediumint(12) NOT NULL default '0', 
+`old_host` VARCHAR(255) NOT NULL,
+KEY `accession_number` (`accession_number`),
+KEY `host` (`host`),
+KEY `organism` (`organism`),
+KEY `taxonomy_id` (`taxonomy_id`),
+KEY `host_taxid` (`host_taxid`)
+);
+
+LOAD DATA INFILE '/tmp/Sequence.txt'
+INTO TABLE parasite_lineage
+FIELDS TERMINATED BY '\t' 
+LINES TERMINATED BY '\n' 
+(accession_number, host, organism, county, colle_date, sub_date,taxonomy_id,host_converted,host_taxid,old_host);
+
+#create table for node Parasite
+CREATE TABLE Parasite SELECT DISTINCT taxonomy_id, organism FROM seqence;
+
+#create table for node Sequence
+CREATE TABLE Sequence SELECT DISTINCT accession_number FROM seqence;
+
+#create table for node Host
+CREATE TABLE Host SELECT DISTINCT host_taxid, host_converted FROM  seqence;
+
+#create table for relationship parasite-host
+CREATE TABLE P_H_relation SELECT DISTINCT taxonomy_id, host_taxid FROM  seqence;
+
+#create table for relationship sequence-parasite
+CREATE TABLE S_P_relation SELECT DISTINCT accession_number, taxonomy_id FROM seqence;
+
+#create table for relationship sequence-host
+CREATE TABLE S_H_relation SELECT DISTINCT accession_number, host_taxid FROM seqence;
+
+#create table to prepare for executing Relation.py file
+CREATE TABLE host_py SELECT DISTINCT host_taxid FROM  seqence;
+CREATE TABLE parasite_py SELECT DISTINCT taxonomy_id FROM  seqence;
+CREATE TABLE relationship SELECT DISTINCT tax_id, parent_tax_id FROM  node;
+
+#edit and run Relation.py on linux server to create all child-parent relationship for parasite/host
+python3 Relation.py
+#get poutput.csv hostoutput.csv
+
+#import poutput.csv hostoutput.csv into MariaDB
+
+CREATE TABLE poutput (
+tax_id VARCHAR(255) NOT NULL,
+parent_tax_id VARCHAR(255) NOT NULL
+);
+
+LOAD DATA INFILE '/tmp/poutput.csv '
+INTO TABLE poutput
+FIELDS TERMINATED BY ','
+IGNORE 1 ROWS;
+
+CREATE TABLE hostoutput (
+tax_id VARCHAR(255) NOT NULL,
+parent_tax_id VARCHAR(255) NOT NULL
+);
+
+LOAD DATA INFILE '/tmp/hostoutput.csv '
+INTO TABLE poutput
+FIELDS TERMINATED BY ','
+IGNORE 1 ROWS;
+
+#create table for node hostparent and relationship host-hostparent/hostparent-hostparent
+create table HP_HP_relation select distinct * from hostoutput;
+
+create table HP1
+select tax_id from HP_HP_relation
+UNION
+select parent_tax_id from HP_HP_relation;
+
+create table HP2 select distinct * from HP1
+
+create table Hostparent select distinct h.tax_id, t.name_txt from HP2 h inner join Taxonomy_name t on h.tax_id = t.tax_id and t.name_class = 'scientific name';
+
+create table H_HP_relation select distinct tax_id, parent_tax_id from HP_HP_relation, host where HP_HP_relation.tax_id = host.host_taxid;
+
+#create table for node parasiteparent and relationship parasite-parasiteparent/parasiteparent-parasiteparent
+create table P_PP_relation select distinct * from poutput;
+
+create table PP1
+select tax_id from relation_P_PP
+UNION
+select parent_tax_id from P_PP_relation;
+
+create table PP2 select distinct * from PP1
+
+create table Parasiteparent select p.tax_id, t.name_txt from PP2 p inner join Taxonomy_name t on p.tax_id = t.tax_id and t.name_class = 'scientific name';
+
+create table P_PP_relation select distinct tax_id, parent_tax_id from P_PP_relation, parasites where P_PP_relation.tax_id = parasites.taxonomy_id;
+
+#export all 12 csv files by sequelpro
+
+#import into Neo4j
+
+#command for importing csv
+/Users/bodomting119/Downloads/neo4j-community-4.4.10/bin/neo4j-admin import --skip-duplicate-nodes --skip-bad-relationships \
+--nodes=Sequence=/Users/bodomting119/Desktop/pepe/1/Sequence_header.csv,/Users/bodomting119/Desktop/pepe/1/Sequence.csv \
+--relationships=SEQUENCE_OF_A=/Users/bodomting119/Desktop/pepe/1/S_P_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/S_P_relation.csv \
+--nodes=Parasite=/Users/bodomting119/Desktop/pepe/1/Parasite_header.csv,/Users/bodomting119/Desktop/pepe/1/Parasite.csv \
+--relationships=PARASITE_OF=/Users/bodomting119/Desktop/pepe/1/P_H_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/P_H_relation.csv \
+--nodes=Host=/Users/bodomting119/Desktop/pepe/1/Host_header.csv,/Users/bodomting119/Desktop/pepe/1/Host.csv \
+--relationships=CHILD_OF_D=/Users/bodomting119/Desktop/pepe/1/H_HP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/H_HP_relation.csv \
+--nodes=Hostparent=/Users/bodomting119/Desktop/pepe/1/Hostparent_header.csv,/Users/bodomting119/Desktop/pepe/1/Hostparent.csv \
+--relationships=CHILD_OF_A=/Users/bodomting119/Desktop/pepe/1/HP_HP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/HP_HP_relation.csv \
+--nodes=Parasiteparent=/Users/bodomting119/Desktop/pepe/1/Parasiteparent_header.csv,/Users/bodomting119/Desktop/pepe/1/Parasiteparent.csv \
+--relationships=CHILD_OF_C=/Users/bodomting119/Desktop/pepe/1/P_PP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/P_PP_relation.csv \
+--relationships=CHILD_OF_B=/Users/bodomting119/Desktop/pepe/1/PP_PP_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/PP_PP_relation.csv \
+--relationships=SEQUENCE_OF_B=/Users/bodomting119/Desktop/pepe/1/S_H_relation_header.csv,/Users/bodomting119/Desktop/pepe/1/S_H_relation.csv
+
+
+
+#query for index and CONSTRAINT
+CREATE INDEX sequence_id FOR (s:Sequence) ON (s.accId);
+CREATE INDEX host_id FOR (h:Host) ON (h.hostId);
+CREATE INDEX hostparent_id FOR (h:Hostparent) ON (h.hpId);
+CREATE INDEX parasite_id FOR (p:Parasite) ON (p.parasiteId);
+CREATE CONSTRAINT parasiteparent_id ON (p:Parasiteparent) ASSERT p.ppId IS UNIQUE;
+CALL db.awaitIndexes();
